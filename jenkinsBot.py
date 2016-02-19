@@ -11,6 +11,9 @@ from config import JENKINS_URL, JENKINS_USERNAME, JENKINS_PASSWORD
 class JenkinsBot(BotPlugin):
 
     def connect_to_jenkins(self):
+        if not JENKINS_URL.beginwith('http'):
+            JENKINS_URL = 'http://' + JENKINS_URL
+
         self.jenkins = Jenkins(
             JENKINS_URL, username=JENKINS_USERNAME, password=JENKINS_PASSWORD)
 
