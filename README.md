@@ -1,3 +1,5 @@
+Note: This is a python3 compatible fork of https://github.com/benvd/err-jenkins
+
 # err-jenkins - Jenkins plugin for Err
 
 Err-jenkins is a plugin for [err](https://github.com/gbin/err) that allows you to interact with [Jenkins](http://jenkins-ci.org), a continuous integration tool.
@@ -14,7 +16,7 @@ This plugin depends on the Python Jenkins:
 
 As admin of an err chatbot, send the following command over XMPP:
 
-    !install git://github.com/benvd/err-jenkins.git
+    !install git://github.com/Djiit/err-jenkins.git
 
 Then use `!help` to see the available commands and their explanation.
 
