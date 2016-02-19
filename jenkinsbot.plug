@@ -2,5 +2,8 @@
 Name = JenkinsBot
 Module = jenkinsBot
 
+[Python]
+version=2+
+
 [Documentation]
 Description = Integrate with Jenkins CI

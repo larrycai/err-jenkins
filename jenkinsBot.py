@@ -1,10 +1,12 @@
 #!/usr/bin/python
+from __future__ import (absolute_import, division,
+                        print_function, unicode_literals)
+
 import ast
 from jenkins import Jenkins
 from errbot import botcmd, BotPlugin
 from config import JENKINS_URL, JENKINS_USERNAME, JENKINS_PASSWORD
 
-__author__ = 'taoistmath'
 
 class JenkinsBot(BotPlugin):
 
@@ -38,9 +40,9 @@ class JenkinsBot(BotPlugin):
         self.connect_to_jenkins()
         
         if len(args) == 0:
-            return u'What Job would you like the parameters for?'
+            return 'What Job would you like the parameters for?'
         if len(args.split()) > 1:
-            return u'Please enter only one Job Name'
+            return 'Please enter only one Job Name'
 
         if self.jenkins.get_job_info(args)['actions'][0] == {}:
             job_param = self.jenkins.get_job_info(args)['actions'][1]['parameterDefinitions']
@@ -58,7 +60,7 @@ class JenkinsBot(BotPlugin):
         self.connect_to_jenkins()
 
         if len(args) == 0:
-            return u'What job would you like to build?'
+            return 'What job would you like to build?'
 
         parameters = self.build_parameters(args[1:])
         self.jenkins.build_job(args[0], parameters)
@@ -73,7 +75,7 @@ class JenkinsBot(BotPlugin):
 
     def format_jobs(self, jobs):
         if len(jobs) == 0:
-            return u'No jobs found.'
+            return 'No jobs found.'
 
         max_length = max([len(job['name']) for job in jobs])
         return '\n'.join(['%s (%s)' % (job['name'].ljust(max_length), job['url']) for job in jobs]).strip()
@@ -81,7 +83,7 @@ class JenkinsBot(BotPlugin):
 
     def format_running_jobs(self, jobs):
         if len(jobs) == 0:
-            return u'No running jobs.'
+            return 'No running jobs.'
 
         jobs_info = [self.jenkins.get_job_info(job['name']) for job in jobs]
         return '\n\n'.join(['%s (%s)\n%s' % (job['name'], job['lastBuild']['url'], job['healthReport'][0]['description']) for job in jobs_info]).strip()
