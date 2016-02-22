@@ -4,7 +4,19 @@ from __future__ import (absolute_import, division,
 
 from jenkins import Jenkins
 from errbot import BotPlugin, botcmd
-from config import JENKINS_URL, JENKINS_USERNAME, JENKINS_PASSWORD
+from errbot.utils import ValidationException
+try:
+    from config import JENKINS_URL, JENKINS_USERNAME, JENKINS_PASSWORD
+except ImportError:
+    JENKINS_URL = JENKINS_USERNAME = JENKINS_PASSWORD = ''
+
+
+PARAM_TEMPLATE = """Type: {0}
+Description: {1}
+Default Value: {2}
+Parameter Name: {3}
+_
+"""
 
 
 class JenkinsBot(BotPlugin):
@@ -13,9 +25,21 @@ class JenkinsBot(BotPlugin):
     min_err_version = '1.2.1'
     max_err_version = '3.3.0'
 
+    def get_configuration_template(self):
+        return {'URL': JENKINS_URL,
+                'USERNAME': JENKINS_USERNAME,
+                'PASSWORD': JENKINS_PASSWORD}
+
+    def check_configuration(self, configuration):
+        for c in configuration:
+            if len(configuration[c] == 0):
+                raise ValidationException(c)
+
     def connect_to_jenkins(self):
-        self.jenkins = Jenkins(
-            JENKINS_URL, username=JENKINS_USERNAME, password=JENKINS_PASSWORD)
+        """Connect to a Jenkins instance using configuration."""
+        self.jenkins = Jenkins(url=self.config['URL'],
+                               username=self.config['USERNAME'],
+                               password=self.config['PASSWORD'])
 
     @botcmd
     def jenkins_list(self, mess, args):
@@ -64,11 +88,7 @@ class JenkinsBot(BotPlugin):
         if len(args) == 0:  # No Job name
             return 'What job would you like to build?'
 
-        params = {'': ''}
-
-        if len(args) > 1:
-            params = {param.split(':')[0]: param.split(':')[1]
-                      for param in args[1:]}
+        params = self.build_parameters(args[1:])
 
         self.jenkins.build_job(args[0], params)
         running_job = self.search_job(args[0])
@@ -78,15 +98,6 @@ class JenkinsBot(BotPlugin):
     def search_job(self, search_term):
         return [job for job in self.jenkins.get_jobs()
                 if search_term.lower() in job['name'].lower()]
-
-    def format_jobs(self, jobs):
-        if len(jobs) == 0:
-            return 'No jobs found.'
-
-        max_length = max([len(job['name']) for job in jobs])
-        return '\n'.join(
-            ['%s (%s)' % (job['name'].ljust(max_length), job['url'])
-             for job in jobs]).strip()
 
     def format_running_jobs(self, jobs):
         if len(jobs) == 0:
@@ -99,14 +110,31 @@ class JenkinsBot(BotPlugin):
             job['healthReport'][0]['description'])
                             for job in jobs_info]).strip()
 
-    def format_params(self, job):
+    @staticmethod
+    def format_jobs(jobs):
+        if len(jobs) == 0:
+            return 'No jobs found.'
+
+        max_length = max([len(job['name']) for job in jobs])
+        return '\n'.join(
+            ['%s (%s)' % (job['name'].ljust(max_length), job['url'])
+             for job in jobs]).strip()
+
+    @staticmethod
+    def format_params(job):
         parameters = ''
 
         for param in range(0, len(job)):
-            parameters = parameters + ("Type: {0}\nDescription: {1}\nDefault Value: {2}\nParameter Name: {3}\n_\n"
-                .format(job[param]['type'], job[param]['description'], str(job[param]['defaultParameterValue']['value']), job[param]['name']))
-
+            parameters = parameters + (PARAM_TEMPLATE.format(
+                job[param]['type'],
+                job[param]['description'],
+                str(job[param]['defaultParameterValue']['value']),
+                job[param]['name']))
         return parameters
 
-    def build_parameters(self, params):
-        return {param.split(':')[0]: param.split(':')[1] for param in params}
+    @staticmethod
+    def build_parameters(params):
+        if len(params) == 0:
+            return {'': ''}
+        return {param.split(':')[0]: param.split(':')[1]
+                for param in params}

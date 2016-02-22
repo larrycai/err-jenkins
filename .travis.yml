@@ -1,0 +1,22 @@
+language: python
+
+python:
+  - 2.7
+  - 3.3
+  - 3.4
+  - 3.5
+  - nightly
+
+install:
+  - pip install -q errbot pytest pytest-pep8 --use-wheel
+  - pip install -q coverage coveralls --use-wheel
+  - pip install -q -r requirements.txt --use-wheel
+
+script:
+  - py.test --pep8 --cov jenkinsBot
+
+after_success:
+  - coveralls
+
+notifications:
+  email: false
