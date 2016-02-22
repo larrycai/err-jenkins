@@ -5,12 +5,10 @@ python:
   - 3.3
   - 3.4
   - 3.5
-  - nightly
 
 install:
-  - pip install -q errbot pytest pytest-pep8 --use-wheel
-  - pip install -q coverage coveralls --use-wheel
-  - pip install -q -r requirements.txt --use-wheel
+  - pip install -q errbot pytest pytest-pep8 pytest-cov coveralls --use-wheel
+  - pip install -qr requirements.txt --use-wheel
 
 script:
   - py.test --pep8 --cov jenkinsBot
