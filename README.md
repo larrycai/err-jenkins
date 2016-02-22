@@ -1,10 +1,8 @@
 # err-jenkins - Jenkins plugin for Err
 
-[![Build Status](https://travis-ci.org/Djiit/err-jenkins.svg?branch=master)](https://travis-ci.org/Djiit/err-jenkins)
+[![Coverage Status](https://coveralls.io/repos/github/Djiit/err-jenkins/badge.svg?branch=master)](https://coveralls.io/github/Djiit/err-jenkins?branch=master) [![Build Status](https://travis-ci.org/Djiit/err-jenkins.svg?branch=master)](https://travis-ci.org/Djiit/err-jenkins)
 
-Err-jenkins is a plugin for [err](https://github.com/gbin/err) that allows you to interact with [Jenkins](http://jenkins-ci.org), a continuous integration tool.
-
-Note: This is a python3 compatible fork of https://github.com/benvd/err-jenkins
+Err-jenkins is a plugin for [Err](https://github.com/gbin/err) that allows you to interact with [Jenkins](http://jenkins-ci.org), a continuous integration tool.
 
 ## Features
 
@@ -17,7 +15,7 @@ Have an idea ? Open an [issue](https://github.com/Djiit/err-jenkins/issues) or s
 
 ## Requirements
 
-This plugin depends on the Python Jenkins:
+This plugin is tested against Python 2.7+ and 3.3+. It only depends on the `python-jenkins` package:
 
 ```bash
 pip install python-jenkins
@@ -48,3 +46,7 @@ If left undefined, you will have to send configuration commands through chat mes
 ```
 !config JenkinsBot {'URL': 'http://jenkins.example.com', 'USERNAME': 'myuser', 'PASSWORD': 'mypassword'}
 ```
+
+## Credits
+
+This plugin is based on the original work by [benvd](https://github.com/benvd/err-jenkins).
