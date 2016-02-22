@@ -22,6 +22,6 @@ Then use `!help` to see the available commands and their explanation.
 
 Before you can use the plugin, you have to add the following three variables to `config.py`:
 
-    JENKINS_URL = ''
-    JENKINS_USERNAME = ''
-    JENKINS_PASSWORD = ''
+    JENKINS_URL = 'http://jenkins.example.com'  # Must begins with 'http' or 'https'.
+    JENKINS_USERNAME = 'myuser'  # Make sure Jenkins ACL is activated.
+    JENKINS_PASSWORD = 'mypassword'  # Use a password or token.
