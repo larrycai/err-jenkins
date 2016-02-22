@@ -3,7 +3,7 @@ Name = JenkinsBot
 Module = jenkinsBot
 
 [Python]
-version=2+
+Version = 2+
 
 [Documentation]
-Description = Integrate with Jenkins CI
+Description = Basic Err integration with Jenkins CI

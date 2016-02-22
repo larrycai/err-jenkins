@@ -3,11 +3,15 @@ from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
 
 from jenkins import Jenkins
-from errbot import botcmd, BotPlugin
+from errbot import BotPlugin, botcmd
 from config import JENKINS_URL, JENKINS_USERNAME, JENKINS_PASSWORD
 
 
 class JenkinsBot(BotPlugin):
+    """Basic Err integration with Jenkins CI"""
+
+    min_err_version = '1.2.1'
+    max_err_version = '3.3.0'
 
     def connect_to_jenkins(self):
         self.jenkins = Jenkins(
