@@ -2,7 +2,6 @@
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
 
-import ast
 from jenkins import Jenkins
 from errbot import botcmd, BotPlugin
 from config import JENKINS_URL, JENKINS_USERNAME, JENKINS_PASSWORD
@@ -11,9 +10,6 @@ from config import JENKINS_URL, JENKINS_USERNAME, JENKINS_PASSWORD
 class JenkinsBot(BotPlugin):
 
     def connect_to_jenkins(self):
-        if not JENKINS_URL.beginwith('http'):
-            JENKINS_URL = 'http://' + JENKINS_URL
-
         self.jenkins = Jenkins(
             JENKINS_URL, username=JENKINS_USERNAME, password=JENKINS_PASSWORD)
 
@@ -61,11 +57,16 @@ class JenkinsBot(BotPlugin):
         """
         self.connect_to_jenkins()
 
-        if len(args) == 0:
+        if len(args) == 0:  # No Job name
             return 'What job would you like to build?'
 
-        parameters = self.build_parameters(args[1:])
-        self.jenkins.build_job(args[0], parameters)
+        params = {'': ''}
+
+        if len(args) > 1:
+            params = {param.split(':')[0]: param.split(':')[1]
+                      for param in args[1:]}
+
+        self.jenkins.build_job(args[0], params)
         running_job = self.search_job(args[0])
         return 'Your job should begin shortly: {0}'.format(
             self.format_jobs(running_job))
@@ -104,18 +105,4 @@ class JenkinsBot(BotPlugin):
         return parameters
 
     def build_parameters(self, params):
-        if len(params) == 0:
-            return ast.literal_eval("{'':''}")
-
-        parameters_list = "{'"
-
-        for counter, param in enumerate(params):
-            param = param.split(':')
-            if counter < len(params) - 1:
-                parameters_list = parameters_list + param[0] + "': '" + param[1] + "', '"
-            else:
-                parameters_list = parameters_list + param[0] + "': '" + param[1] + "'"
-
-        parameters_list = parameters_list + '}'
-
-        return ast.literal_eval(parameters_list)
+        return {param.split(':')[0]: param.split(':')[1] for param in params}
