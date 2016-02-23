@@ -3,7 +3,7 @@ from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
 
 from jenkins import Jenkins
-from errbot import BotPlugin, botcmd
+from errbot import BotPlugin, botcmd, webhook
 from errbot.utils import ValidationException
 try:
     from config import JENKINS_URL, JENKINS_USERNAME, JENKINS_PASSWORD
@@ -40,6 +40,11 @@ class JenkinsBot(BotPlugin):
         self.jenkins = Jenkins(url=self.config['URL'],
                                username=self.config['USERNAME'],
                                password=self.config['PASSWORD'])
+
+    @webhook
+    def test(self, incoming_request):
+        self.log.debug(repr(incoming_request))
+        return "OK"
 
     @botcmd
     def jenkins_list(self, mess, args):
