@@ -9,6 +9,7 @@ Err-jenkins is a plugin for [Err](https://github.com/gbin/err) that allows you t
 * Search / List available jobs.
 * List parameters for a given job.
 * Build jobs with or without parameters.
+* Webhook support! Send message on build success/failure
 * Support AUTOINSTALL_DEPS thanks to the `requirements.txt` file.
 
 Have an idea ? Open an [issue](https://github.com/Djiit/err-jenkins/issues) or send me a [Pull Request](https://github.com/Djiit/err-jenkins/pulls).
@@ -39,13 +40,22 @@ You can set some default configuration values in your Errbot's `config.py`:
 JENKINS_URL = 'http://jenkins.example.com'  # Must begins with 'http' or 'https'.
 JENKINS_USERNAME = 'myuser'  # Make sure Jenkins ACL is configured.
 JENKINS_PASSWORD = 'mypassword'  # Use a password or token.
+JENKINS_RECEIVE_NOTIFICATION = True  # If True, this plugin will accept HTTP POST from Jenkins (see configuration below).
 ```
 
 If left undefined, you will have to send configuration commands through chat message to this plugins as in :
 
 ```
-!config JenkinsBot {'URL': 'http://jenkins.example.com', 'USERNAME': 'myuser', 'PASSWORD': 'mypassword'}
+!config JenkinsBot {'URL': 'http://jenkins.example.com', 'USERNAME': 'myuser', 'PASSWORD': 'mypassword', 'RECEIVE_NOTIFICATION': True}
 ```
+
+### Webhooks setup
+
+To be able to receive messages based on build success and/or failure :
+1. Set JENKINS_RECEIVE_NOTIFICATION (in config.py) or RECEIVE_NOTIFICATION' (through chat message) configuration option to True.
+2. Install and enable the [Jenkins Notification Plugin](https://wiki.jenkins-ci.org/display/JENKINS/Notification+Plugin)
+3. Configure your project's notifications as in :
+[![Build Status](jenkins_configuration.png)](#)
 
 ## Credits
 
