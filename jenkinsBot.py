@@ -2,6 +2,7 @@
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
 
+from itertools import chain
 from jinja2 import Template
 from jenkins import Jenkins
 from errbot import BotPlugin, botcmd, webhook
@@ -22,6 +23,12 @@ except ImportError:
     JENKINS_RECEIVE_NOTIFICATION = True
 
 
+CONFIG_TEMPLATE = {
+    'URL': JENKINS_URL,
+    'USERNAME': JENKINS_USERNAME,
+    'PASSWORD': JENKINS_PASSWORD}
+
+
 class JenkinsBot(BotPlugin):
     """Basic Err integration with Jenkins CI"""
 
@@ -29,9 +36,15 @@ class JenkinsBot(BotPlugin):
     #max_err_version = '3.3.0'
 
     def get_configuration_template(self):
-        return {'URL': JENKINS_URL,
-                'USERNAME': JENKINS_USERNAME,
-                'PASSWORD': JENKINS_PASSWORD}
+        return CONFIG_TEMPLATE
+
+    def configure(self, configuration):
+        if configuration is not None and configuration != {}:
+            config = dict(chain(CONFIG_TEMPLATE.items(),
+                                configuration.items()))
+        else:
+            config = CONFIG_TEMPLATE
+        super().configure(config)
 
     def check_configuration(self, configuration):
         for c in configuration:
@@ -157,10 +170,8 @@ Parameter Name: {{p.name}}
 
     @staticmethod
     def format_notification(body):
-        NOTIFICATION_TEMPLATE = Template("""Build #{{build.numbner}} \
+        NOTIFICATION_TEMPLATE = Template("""Build #{{build.number}} \
 {{build.status}} for Job {{name}} ({{build.full_url}})
 Based on {{build.scm.url}}@{{build.scm.commit}} ({{build.scm.branch}})
 """)
-
-        message = NOTIFICATION_TEMPLATE.render(**body)
-        return body
+        return NOTIFICATION_TEMPLATE.render(**body)
