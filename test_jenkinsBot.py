@@ -31,7 +31,7 @@ class TestJenkinsBotStaticMethods(object):
 Description: foo bar baz
 Default Value: bar
 Parameter Name: FOO
-_
+
 """
 
     def test_build_parameters_helper(self):
@@ -57,16 +57,12 @@ _
                 "scm": {
                     "url": "https://github.com/Djiit/err-jenkins.git",
                     "branch": "origin/master",
-                    "commit": "0e51ed9019bd39bdb77589be4f2634fb97b46fbc"
+                    "commit": "0e51ed"
                 },
-                "artifacts": {
-                    "dummy.tar.gz": {
-                        "archive": "http://jenkins.example.com/job/dummy/1/artifact/dummy.tar.gz",
-                        "s3": "https://s3-eu-west-1.amazonaws.com/dummy/dummy.tar.gz"
-                    }
-                }
             }
         }
         result = jenkinsBot.JenkinsBot.format_notification(body)
-        assert result == """
-"""
+        assert result == """Build #1 SUCCESS for Job dummy \
+(http://jenkins.example.com/job/dummy/1/)
+Based on https://github.com/Djiit/err-jenkins.git/commit/0e51ed \
+(origin/master)"""

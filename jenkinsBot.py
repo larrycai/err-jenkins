@@ -26,7 +26,8 @@ except ImportError:
 CONFIG_TEMPLATE = {
     'URL': JENKINS_URL,
     'USERNAME': JENKINS_USERNAME,
-    'PASSWORD': JENKINS_PASSWORD}
+    'PASSWORD': JENKINS_PASSWORD,
+    'RECEIVE_NOTIFICATION': JENKINS_RECEIVE_NOTIFICATION}
 
 
 class JenkinsBot(BotPlugin):
@@ -153,13 +154,15 @@ class JenkinsBot(BotPlugin):
 
     @staticmethod
     def format_params(job):
-        PARAM_TEMPLATE = Template("""{% for p in job %} Type: {{p.type}}
+        for p in job:
+            print(p)
+        PARAM_TEMPLATE = Template("""{% for p in params %}Type: {{p.type}}
 Description: {{p.description}}
 Default Value: {{p.defaultParameterValue.value}}
 Parameter Name: {{p.name}}
 
 {% endfor %}""")
-        return PARAM_TEMPLATE.render(job)
+        return PARAM_TEMPLATE.render({'params': job})
 
     @staticmethod
     def build_parameters(params):
@@ -172,6 +175,6 @@ Parameter Name: {{p.name}}
     def format_notification(body):
         NOTIFICATION_TEMPLATE = Template("""Build #{{build.number}} \
 {{build.status}} for Job {{name}} ({{build.full_url}})
-Based on {{build.scm.url}}@{{build.scm.commit}} ({{build.scm.branch}})
+Based on {{build.scm.url}}/commit/{{build.scm.commit}} ({{build.scm.branch}})
 """)
         return NOTIFICATION_TEMPLATE.render(**body)
