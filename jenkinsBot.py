@@ -6,13 +6,19 @@ from jinja2 import Template
 from jenkins import Jenkins
 from errbot import BotPlugin, botcmd, webhook
 from errbot.utils import ValidationException
+
 try:
     from config import JENKINS_URL, JENKINS_USERNAME, JENKINS_PASSWORD
 except ImportError:
-    # Default configuration
+    # Default mandatory configuration
     JENKINS_URL = ''
     JENKINS_USERNAME = ''
     JENKINS_PASSWORD = ''
+
+try:
+    from config import JENKINS_RECEIVE_NOTIFICATION
+except ImportError:
+    # Default optional configuration
     JENKINS_RECEIVE_NOTIFICATION = True
 
 
