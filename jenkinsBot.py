@@ -2,33 +2,53 @@
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
 
+from itertools import chain
+from jinja2 import Template
 from jenkins import Jenkins
-from errbot import BotPlugin, botcmd
+from errbot import BotPlugin, botcmd, webhook
 from errbot.utils import ValidationException
+
 try:
     from config import JENKINS_URL, JENKINS_USERNAME, JENKINS_PASSWORD
 except ImportError:
-    JENKINS_URL = JENKINS_USERNAME = JENKINS_PASSWORD = ''
+    # Default mandatory configuration
+    JENKINS_URL = ''
+    JENKINS_USERNAME = ''
+    JENKINS_PASSWORD = ''
+
+try:
+    from config import (JENKINS_RECEIVE_NOTIFICATION,
+                        JENKINS_CHATROOMS_NOTIFICATION)
+except ImportError:
+    # Default optional configuration
+    JENKINS_RECEIVE_NOTIFICATION = True
+    JENKINS_CHATROOMS_NOTIFICATION = ()
 
 
-PARAM_TEMPLATE = """Type: {0}
-Description: {1}
-Default Value: {2}
-Parameter Name: {3}
-_
-"""
+CONFIG_TEMPLATE = {
+    'URL': JENKINS_URL,
+    'USERNAME': JENKINS_USERNAME,
+    'PASSWORD': JENKINS_PASSWORD,
+    'RECEIVE_NOTIFICATION': JENKINS_RECEIVE_NOTIFICATION,
+    'CHATROOMS_NOTIFICATION': JENKINS_CHATROOMS_NOTIFICATION}
 
 
 class JenkinsBot(BotPlugin):
     """Basic Err integration with Jenkins CI"""
 
     min_err_version = '1.2.1'
-    max_err_version = '3.3.0'
+    # max_err_version = '3.3.0'
 
     def get_configuration_template(self):
-        return {'URL': JENKINS_URL,
-                'USERNAME': JENKINS_USERNAME,
-                'PASSWORD': JENKINS_PASSWORD}
+        return CONFIG_TEMPLATE
+
+    def configure(self, configuration):
+        if configuration is not None and configuration != {}:
+            config = dict(chain(CONFIG_TEMPLATE.items(),
+                                configuration.items()))
+        else:
+            config = CONFIG_TEMPLATE
+        super().configure(config)
 
     def check_configuration(self, configuration):
         for c in configuration:
@@ -40,6 +60,25 @@ class JenkinsBot(BotPlugin):
         self.jenkins = Jenkins(url=self.config['URL'],
                                username=self.config['USERNAME'],
                                password=self.config['PASSWORD'])
+
+    @webhook(r'/jenkins/notification')
+    def handle_notification(self, incoming_request):
+        if not JENKINS_RECEIVE_NOTIFICATION:
+            return "Notification handling is disabled \
+                    (JENKINS_RECEIVE_NOTIFICATION = False)"
+
+        self.log.debug(repr(incoming_request))
+        chatrooms = (JENKINS_CHATROOMS_NOTIFICATION
+                     if JENKINS_CHATROOMS_NOTIFICATION
+                     else self.bot_config.CHATROOM_PRESENCE)
+
+        for room in chatrooms:
+            self.send(
+                room,
+                self.format_notification(incoming_request),
+                message_type='groupchat'
+                )
+        return "OK"
 
     @botcmd
     def jenkins_list(self, mess, args):
@@ -122,15 +161,23 @@ class JenkinsBot(BotPlugin):
 
     @staticmethod
     def format_params(job):
-        parameters = ''
+        for p in job:
+            print(p)
+        PARAM_TEMPLATE = Template("""{% for p in params %}Type: {{p.type}}
+Description: {{p.description}}
+Default Value: {{p.defaultParameterValue.value}}
+Parameter Name: {{p.name}}
 
-        for param in range(0, len(job)):
-            parameters = parameters + (PARAM_TEMPLATE.format(
-                job[param]['type'],
-                job[param]['description'],
-                str(job[param]['defaultParameterValue']['value']),
-                job[param]['name']))
-        return parameters
+{% endfor %}""")
+        return PARAM_TEMPLATE.render({'params': job})
+
+    @staticmethod
+    def format_notification(body):
+        NOTIFICATION_TEMPLATE = Template("""Build #{{build.number}} \
+{{build.status}} for Job {{name}} ({{build.full_url}})
+Based on {{build.scm.url}}/commit/{{build.scm.commit}} ({{build.scm.branch}})
+""")
+        return NOTIFICATION_TEMPLATE.render(body)
 
     @staticmethod
     def build_parameters(params):
