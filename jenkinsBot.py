@@ -37,7 +37,7 @@ class JenkinsBot(BotPlugin):
     """Basic Err integration with Jenkins CI"""
 
     min_err_version = '1.2.1'
-    #max_err_version = '3.3.0'
+    # max_err_version = '3.3.0'
 
     def get_configuration_template(self):
         return CONFIG_TEMPLATE
