@@ -175,8 +175,8 @@ Parameter Name: {{p.name}}
     def format_notification(body):
         NOTIFICATION_TEMPLATE = Template("""Build #{{build.number}} \
 {{build.status}} for Job {{name}} ({{build.full_url}})
-Based on {{build.scm.url}}/commit/{{build.scm.commit}} ({{build.scm.branch}})
-""")
+{% if build.scm %}Based on {{build.scm.url}}/commit/{{build.scm.commit}} \
+({{build.scm.branch}}){% endif %}""")
         return NOTIFICATION_TEMPLATE.render(body)
 
     @staticmethod
