@@ -2,21 +2,18 @@
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
 
+from jinja2 import Template
 from jenkins import Jenkins
 from errbot import BotPlugin, botcmd, webhook
 from errbot.utils import ValidationException
 try:
     from config import JENKINS_URL, JENKINS_USERNAME, JENKINS_PASSWORD
 except ImportError:
-    JENKINS_URL = JENKINS_USERNAME = JENKINS_PASSWORD = ''
-
-
-PARAM_TEMPLATE = """Type: {0}
-Description: {1}
-Default Value: {2}
-Parameter Name: {3}
-_
-"""
+    # Default configuration
+    JENKINS_URL = ''
+    JENKINS_USERNAME = ''
+    JENKINS_PASSWORD = ''
+    JENKINS_RECEIVE_NOTIFICATION = True
 
 
 class JenkinsBot(BotPlugin):
@@ -41,14 +38,19 @@ class JenkinsBot(BotPlugin):
                                username=self.config['USERNAME'],
                                password=self.config['PASSWORD'])
 
-    @webhook
-    def test(self, incoming_request):
-        self.log.debug(repr(incoming_request))
-        return "OK"
+    @webhook(r'/jenkins/notification')
+    def handle_notification(self, incoming_request):
+        if not JENKINS_RECEIVE_NOTIFICATION:
+            return "Notification handling is disabled \
+                    (JENKINS_RECEIVE_NOTIFICATION = False)"
 
-    @webhook
-    def jenkins_notification(self, incoming_request):
         self.log.debug(repr(incoming_request))
+        for room in self.bot_config.CHATROOM_PRESENCE:
+            self.send(
+                room,
+                self.format_notification(incoming_request),
+                message_type='groupchat'
+            )
         return "OK"
 
     @botcmd
@@ -132,15 +134,13 @@ class JenkinsBot(BotPlugin):
 
     @staticmethod
     def format_params(job):
-        parameters = ''
+        PARAM_TEMPLATE = Template("""{% for p in job %} Type: {{p.type}}
+Description: {{p.description}}
+Default Value: {{p.defaultParameterValue.value}}
+Parameter Name: {{p.name}}
 
-        for param in range(0, len(job)):
-            parameters = parameters + (PARAM_TEMPLATE.format(
-                job[param]['type'],
-                job[param]['description'],
-                str(job[param]['defaultParameterValue']['value']),
-                job[param]['name']))
-        return parameters
+{% endfor %}""")
+        return PARAM_TEMPLATE.render(job)
 
     @staticmethod
     def build_parameters(params):
@@ -148,3 +148,13 @@ class JenkinsBot(BotPlugin):
             return {'': ''}
         return {param.split(':')[0]: param.split(':')[1]
                 for param in params}
+
+    @staticmethod
+    def format_notification(body):
+        NOTIFICATION_TEMPLATE = Template("""Build #{{build.numbner}} \
+{{build.status}} for Job {{name}} ({{build.full_url}})
+Based on {{build.scm.url}}@{{build.scm.commit}} ({{build.scm.branch}})
+""")
+
+        message = NOTIFICATION_TEMPLATE.render(**body)
+        return body
