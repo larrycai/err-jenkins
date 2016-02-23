@@ -23,7 +23,7 @@ class JenkinsBot(BotPlugin):
     """Basic Err integration with Jenkins CI"""
 
     min_err_version = '1.2.1'
-    max_err_version = '3.3.0'
+    #max_err_version = '3.3.0'
 
     def get_configuration_template(self):
         return {'URL': JENKINS_URL,
@@ -43,6 +43,11 @@ class JenkinsBot(BotPlugin):
 
     @webhook
     def test(self, incoming_request):
+        self.log.debug(repr(incoming_request))
+        return "OK"
+
+    @webhook
+    def jenkins_notification(self, incoming_request):
         self.log.debug(repr(incoming_request))
         return "OK"
 
