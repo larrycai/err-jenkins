@@ -172,16 +172,16 @@ Parameter Name: {{p.name}}
         return PARAM_TEMPLATE.render({'params': job})
 
     @staticmethod
-    def build_parameters(params):
-        if len(params) == 0:
-            return {'': ''}
-        return {param.split(':')[0]: param.split(':')[1]
-                for param in params}
-
-    @staticmethod
     def format_notification(body):
         NOTIFICATION_TEMPLATE = Template("""Build #{{build.number}} \
 {{build.status}} for Job {{name}} ({{build.full_url}})
 Based on {{build.scm.url}}/commit/{{build.scm.commit}} ({{build.scm.branch}})
 """)
-        return NOTIFICATION_TEMPLATE.render(**body)
+        return NOTIFICATION_TEMPLATE.render(body)
+
+    @staticmethod
+    def build_parameters(params):
+        if len(params) == 0:
+            return {'': ''}
+        return {param.split(':')[0]: param.split(':')[1]
+                for param in params}
