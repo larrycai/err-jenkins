@@ -17,17 +17,20 @@ except ImportError:
     JENKINS_PASSWORD = ''
 
 try:
-    from config import JENKINS_RECEIVE_NOTIFICATION
+    from config import (JENKINS_RECEIVE_NOTIFICATION,
+                        JENKINS_CHATROOMS_NOTIFICATION)
 except ImportError:
     # Default optional configuration
     JENKINS_RECEIVE_NOTIFICATION = True
+    JENKINS_CHATROOMS_NOTIFICATION = ()
 
 
 CONFIG_TEMPLATE = {
     'URL': JENKINS_URL,
     'USERNAME': JENKINS_USERNAME,
     'PASSWORD': JENKINS_PASSWORD,
-    'RECEIVE_NOTIFICATION': JENKINS_RECEIVE_NOTIFICATION}
+    'RECEIVE_NOTIFICATION': JENKINS_RECEIVE_NOTIFICATION,
+    'CHATROOMS_NOTIFICATION': JENKINS_CHATROOMS_NOTIFICATION}
 
 
 class JenkinsBot(BotPlugin):
@@ -65,12 +68,16 @@ class JenkinsBot(BotPlugin):
                     (JENKINS_RECEIVE_NOTIFICATION = False)"
 
         self.log.debug(repr(incoming_request))
-        for room in self.bot_config.CHATROOM_PRESENCE:
+        chatrooms = (JENKINS_CHATROOMS_NOTIFICATION
+                     if JENKINS_CHATROOMS_NOTIFICATION
+                     else self.bot_config.CHATROOM_PRESENCE)
+
+        for room in chatrooms:
             self.send(
                 room,
                 self.format_notification(incoming_request),
                 message_type='groupchat'
-            )
+                )
         return "OK"
 
     @botcmd
