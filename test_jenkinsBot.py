@@ -1,8 +1,26 @@
+# coding: utf-8
+from errbot.backends.test import testbot
+
 import jenkinsBot
 
 
 class TestJenkinsBot(object):
     extra_plugin_dir = '.'
+
+    # def test_jenkins_build_no_args(self, testbot):
+    #     testbot.push_message('!jenkins build')
+    #     assert ('What job would you like to build?'
+    #             in testbot.pop_message())
+
+    # def test_jenkins_build_shortcut_no_args(self, testbot):
+    #     testbot.push_message('!build')
+    #     assert ('What job would you like to build?'
+    #             in testbot.pop_message())
+
+    # def test_jenkins_param_no_args(self, testbot):
+    #     testbot.push_message('!jenkins param')
+    #     assert ('What Job would you like the parameters for?'
+    #             in testbot.pop_message())
 
 
 class TestJenkinsBotStaticMethods(object):

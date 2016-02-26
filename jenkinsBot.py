@@ -1,4 +1,4 @@
-#!/usr/bin/python
+# coding: utf-8
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
 
@@ -49,6 +49,7 @@ class JenkinsBot(BotPlugin):
         else:
             config = CONFIG_TEMPLATE
         super().configure(config)
+        return
 
     def check_configuration(self, configuration):
         for c in configuration:
@@ -63,13 +64,13 @@ class JenkinsBot(BotPlugin):
 
     @webhook(r'/jenkins/notification')
     def handle_notification(self, incoming_request):
-        if not JENKINS_RECEIVE_NOTIFICATION:
+        if not self.config['RECEIVE_NOTIFICATION']:
             return "Notification handling is disabled \
                     (JENKINS_RECEIVE_NOTIFICATION = False)"
 
         self.log.debug(repr(incoming_request))
-        chatrooms = (JENKINS_CHATROOMS_NOTIFICATION
-                     if JENKINS_CHATROOMS_NOTIFICATION
+        chatrooms = (self.config['CHATROOMS_NOTIFICATION']
+                     if self.config['CHATROOMS_NOTIFICATION']
                      else self.bot_config.CHATROOM_PRESENCE)
 
         for room in chatrooms:
@@ -98,17 +99,15 @@ class JenkinsBot(BotPlugin):
                 if 'anime' in job['color']]
         return self.format_running_jobs(jobs)
 
-    @botcmd
+    @botcmd(split_args_with=None)
     def jenkins_param(self, mess, args):
         """List Parameters for a given job."""
         self.connect_to_jenkins()
 
         if len(args) == 0:
             return 'What Job would you like the parameters for?'
-        if len(args.split()) > 1:
-            return 'Please enter only one Job Name'
 
-        if self.jenkins.get_job_info(args)['actions'][0] == {}:
+        if self.jenkins.get_job_info(args[0])['actions'][0] == {}:
             job_param = self.jenkins.get_job_info(
                 args)['actions'][1]['parameterDefinitions']
         else:
@@ -133,6 +132,11 @@ class JenkinsBot(BotPlugin):
         running_job = self.search_job(args[0])
         return 'Your job should begin shortly: {0}'.format(
             self.format_jobs(running_job))
+
+    @botcmd(split_args_with=None)
+    def build(self, mess, args):
+        """Shortcut for jenkins_build"""
+        return self.jenkins_build(mess, args)
 
     def search_job(self, search_term):
         return [job for job in self.jenkins.get_jobs()
