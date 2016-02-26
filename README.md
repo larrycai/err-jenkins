@@ -29,7 +29,7 @@ pip install python-jenkins
 As admin of an err chatbot, send the following command over XMPP:
 
 ```
-!install git://github.com/Djiit/err-jenkins.git
+!repos install git://github.com/Djiit/err-jenkins.git
 ```
 
 ### Commands
@@ -54,7 +54,7 @@ JENKINS_CHATROOMS_NOTIFICATION = ()  # Tuples of chatroom names where Err should
 If left undefined, you will have to send configuration commands through chat message to this plugins as in :
 
 ```
-!config JenkinsBot {'URL': 'http://jenkins.example.com', 'USERNAME': 'myuser', 'PASSWORD': 'mypassword', 'RECEIVE_NOTIFICATION': True, 'CHATROOMS_NOTIFICATION': ()}
+!plugin config JenkinsBot {'URL': 'http://jenkins.example.com', 'USERNAME': 'myuser', 'PASSWORD': 'mypassword', 'RECEIVE_NOTIFICATION': True, 'CHATROOMS_NOTIFICATION': ()}
 ```
 
 ### Webhooks setup
