@@ -29,7 +29,7 @@ pip install python-jenkins
 As admin of an err chatbot, send the following command over XMPP:
 
 ```
-!repos install git://github.com/Djiit/err-jenkins.git
+!repos install https://github.com/Djiit/err-jenkins.git
 ```
 
 ### Commands
