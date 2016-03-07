@@ -55,12 +55,16 @@ class JenkinsBot(BotPlugin):
         for c in configuration:
             if len(configuration[c] == 0):
                 raise ValidationException(c)
+        return
 
     def connect_to_jenkins(self):
         """Connect to a Jenkins instance using configuration."""
+        self.log.debug('Connecting to Jenkins ({0})'.format(
+            self.config['URL']))
         self.jenkins = Jenkins(url=self.config['URL'],
                                username=self.config['USERNAME'],
                                password=self.config['PASSWORD'])
+        return
 
     @webhook(r'/jenkins/notification')
     def handle_notification(self, incoming_request):
@@ -128,7 +132,11 @@ class JenkinsBot(BotPlugin):
 
         params = self.build_parameters(args[1:])
 
-        self.jenkins.build_job(args[0], params)
+        if params is not None:  # Do we have any params ?
+            self.jenkins.build_job(args[0], params)
+        else:
+            self.jenkins.build_job(args[0])
+
         running_job = self.search_job(args[0])
         return 'Your job should begin shortly: {0}'.format(
             self.format_jobs(running_job))
@@ -139,8 +147,9 @@ class JenkinsBot(BotPlugin):
         return self.jenkins_build(mess, args)
 
     def search_job(self, search_term):
-        return [job for job in self.jenkins.get_jobs()
-                if search_term.lower() in job['name'].lower()]
+        self.log.debug('Querying Jenkins for job "{0}"'.format(search_term))
+        return [job for job in self.jenkins.get_jobs(folder_depth=None)
+                if search_term.lower() == job['fullname'].lower()]
 
     def format_running_jobs(self, jobs):
         if len(jobs) == 0:
@@ -158,9 +167,9 @@ class JenkinsBot(BotPlugin):
         if len(jobs) == 0:
             return 'No jobs found.'
 
-        max_length = max([len(job['name']) for job in jobs])
+        max_length = max([len(job['fullname']) for job in jobs])
         return '\n'.join(
-            ['%s (%s)' % (job['name'].ljust(max_length), job['url'])
+            ['%s (%s)' % (job['fullname'].ljust(max_length), job['url'])
              for job in jobs]).strip()
 
     @staticmethod
@@ -185,7 +194,7 @@ Parameter Name: {{p.name}}
 
     @staticmethod
     def build_parameters(params):
-        if len(params) == 0:
-            return {'': ''}
-        return {param.split(':')[0]: param.split(':')[1]
-                for param in params}
+        if len(params) > 0:
+            return {param.split(':')[0]: param.split(':')[1]
+                    for param in params}
+        return

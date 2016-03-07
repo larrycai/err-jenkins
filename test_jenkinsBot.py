@@ -30,7 +30,7 @@ class TestJenkinsBotStaticMethods(object):
                  'fullname': 'foo bar',
                  'url': 'http://jenkins.example.com/job/foo/'}]
         result = jenkinsBot.JenkinsBot.format_jobs(jobs)
-        assert result == 'foo (http://jenkins.example.com/job/foo/)'
+        assert result == 'foo bar (http://jenkins.example.com/job/foo/)'
 
     def test_format_jobs_helper_no_params(self):
         jobs = []
@@ -60,7 +60,7 @@ Parameter Name: FOO
     def test_build_parameters_helper_no_params(self):
         params = []
         result = jenkinsBot.JenkinsBot.build_parameters(params)
-        assert result == {'': ''}
+        assert result is None
 
     def test_format_notification(self):
         body = {
