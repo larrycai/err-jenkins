@@ -60,7 +60,7 @@ Parameter Name: FOO
     def test_build_parameters_helper_no_params(self):
         params = []
         result = jenkinsBot.JenkinsBot.build_parameters(params)
-        assert result is None
+        assert result == {'': ''}
 
     def test_format_notification(self):
         body = {

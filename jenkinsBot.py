@@ -2,7 +2,9 @@
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
 
+import json
 from itertools import chain
+
 from jinja2 import Template
 from jenkins import Jenkins
 from errbot import BotPlugin, botcmd, webhook
@@ -66,6 +68,16 @@ class JenkinsBot(BotPlugin):
                                password=self.config['PASSWORD'])
         return
 
+    def broadcast(self, mess):
+        """Shortcut to broadcast a message to all elligible chatrooms."""
+        chatrooms = (self.config['CHATROOMS_NOTIFICATION']
+                     if self.config['CHATROOMS_NOTIFICATION']
+                     else self.bot_config.CHATROOM_PRESENCE)
+
+        for room in chatrooms:
+            self.send(room, mess, message_type='groupchat')
+        return
+
     @webhook(r'/jenkins/notification')
     def handle_notification(self, incoming_request):
         if not self.config['RECEIVE_NOTIFICATION']:
@@ -73,26 +85,14 @@ class JenkinsBot(BotPlugin):
                     (JENKINS_RECEIVE_NOTIFICATION = False)"
 
         self.log.debug(repr(incoming_request))
-        chatrooms = (self.config['CHATROOMS_NOTIFICATION']
-                     if self.config['CHATROOMS_NOTIFICATION']
-                     else self.bot_config.CHATROOM_PRESENCE)
-
-        for room in chatrooms:
-            self.send(
-                room,
-                self.format_notification(incoming_request),
-                message_type='groupchat'
-                )
+        self.broadcast(self.format_notification(incoming_request))
         return "OK"
 
     @botcmd
     def jenkins_list(self, mess, args):
         """List all jobs, optionally filter them using a search term."""
         self.connect_to_jenkins()
-
-        search_term = args.strip().lower()
-        jobs = self.search_job(search_term)
-        return self.format_jobs(jobs)
+        return self.format_jobs(self.jenkins.get_jobs(folder_depth=None))
 
     @botcmd
     def jenkins_running(self, mess, args):
@@ -106,17 +106,18 @@ class JenkinsBot(BotPlugin):
     @botcmd(split_args_with=None)
     def jenkins_param(self, mess, args):
         """List Parameters for a given job."""
-        self.connect_to_jenkins()
-
         if len(args) == 0:
             return 'What Job would you like the parameters for?'
 
-        if self.jenkins.get_job_info(args[0])['actions'][0] == {}:
-            job_param = self.jenkins.get_job_info(
-                args)['actions'][1]['parameterDefinitions']
+        self.connect_to_jenkins()
+
+        job = self.jenkins.get_job_info(args[0])
+        if job['actions'][1] != {}:
+            job_param = job['actions'][1]['parameterDefinitions']
+        elif job['actions'][0] != {}:
+            job_param = job['actions'][0]['parameterDefinitions']
         else:
-            job_param = self.jenkins.get_job_info(
-                args)['actions'][0]['parameterDefinitions']
+            job_param = []
 
         return self.format_params(job_param)
 
@@ -125,17 +126,18 @@ class JenkinsBot(BotPlugin):
         """Build a Jenkins Job with the given parameters
         Example: !jenkins build test_project FOO:bar
         """
-        self.connect_to_jenkins()
-
         if len(args) == 0:  # No Job name
             return 'What job would you like to build?'
 
+        self.connect_to_jenkins()
         params = self.build_parameters(args[1:])
 
-        if params is not None:  # Do we have any params ?
-            self.jenkins.build_job(args[0], params)
-        else:
+        # Is it a parameterized job ?
+        job = self.jenkins.get_job_info(args[0])
+        if job['actions'][0] == {} and job['actions'][1] == {}:
             self.jenkins.build_job(args[0])
+        else:
+            self.jenkins.build_job(args[0], params)
 
         running_job = self.search_job(args[0])
         return 'Your job should begin shortly: {0}'.format(
@@ -174,8 +176,9 @@ class JenkinsBot(BotPlugin):
 
     @staticmethod
     def format_params(job):
-        for p in job:
-            print(p)
+        """Format job parameters."""
+        if len(job) == 0:
+            return 'This job is not parameterized.'
         PARAM_TEMPLATE = Template("""{% for p in params %}Type: {{p.type}}
 Description: {{p.description}}
 Default Value: {{p.defaultParameterValue.value}}
@@ -197,4 +200,4 @@ Parameter Name: {{p.name}}
         if len(params) > 0:
             return {param.split(':')[0]: param.split(':')[1]
                     for param in params}
-        return
+        return {'': ''}
