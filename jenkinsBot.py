@@ -34,6 +34,35 @@ CONFIG_TEMPLATE = {
     'RECEIVE_NOTIFICATION': JENKINS_RECEIVE_NOTIFICATION,
     'CHATROOMS_NOTIFICATION': JENKINS_CHATROOMS_NOTIFICATION}
 
+JENKINS_JOB_TEMPLATE_PIPELINE = """<?xml version='1.0' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job">
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition" plugin="workflow-cps">
+    <scm class="hudson.plugins.git.GitSCM" plugin="git">
+      <configVersion>2</configVersion>
+      <userRemoteConfigs>
+        <hudson.plugins.git.UserRemoteConfig>
+          <url>{repository}</url>
+        </hudson.plugins.git.UserRemoteConfig>
+      </userRemoteConfigs>
+      <branches>
+        <hudson.plugins.git.BranchSpec>
+          <name>*/master</name>
+        </hudson.plugins.git.BranchSpec>
+      </branches>
+      <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+      <submoduleCfg class="list"/>
+      <extensions/>
+    </scm>
+    <scriptPath>Jenkinsfile</scriptPath>
+  </definition>
+  <triggers/>
+</flow-definition>
+"""
+
 
 class JenkinsBot(BotPlugin):
     """Basic Err integration with Jenkins CI"""
@@ -148,6 +177,27 @@ class JenkinsBot(BotPlugin):
         """Shortcut for jenkins_build"""
         return self.jenkins_build(mess, args)
 
+    @botcmd(split_args_with=None)
+    def jenkins_create(self, mess, args):
+        """Create a Jenkins Job.
+        Example: !jenkins create pipeline foo git@github.com:foo/bar.git
+        """
+        if len(args) < 2:  # No Job type or name
+            return 'Oops, I need a type and a name for your new job.'
+
+        if args[0] not in ('pipeline', 'multibranch'):
+            return 'I\'m sorry, what type of job do you want ?'
+
+        self.connect_to_jenkins()
+
+        if args[0] == 'pipeline':
+            self.jenkins.create_job(
+                args[1],
+                JENKINS_JOB_TEMPLATE_PIPELINE.format(repository=args[2]))
+        elif args[0] == 'multibranch':
+            return
+        return
+
     def search_job(self, search_term):
         self.log.debug('Querying Jenkins for job "{0}"'.format(search_term))
         return [job for job in self.jenkins.get_jobs(folder_depth=None)
@@ -190,7 +240,7 @@ Parameter Name: {{p.name}}
     @staticmethod
     def format_notification(body):
         NOTIFICATION_TEMPLATE = Template("""Build #{{build.number}} \
-{{build.status}} for Job {{name}} ({{build.full_url}})
+{{build.status}} for Job {{fullname}} ({{build.full_url}})
 {% if build.scm %}Based on {{build.scm.url}}/commit/{{build.scm.commit}} \
 ({{build.scm.branch}}){% endif %}""")
         return NOTIFICATION_TEMPLATE.render(body)

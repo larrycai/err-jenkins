@@ -6,10 +6,13 @@ Err-jenkins is a plugin for [Err](https://github.com/gbin/err) that allows you t
 
 ## Features
 
+* Support Jenkins 2.x!
 * Search / List available jobs.
 * List parameters for a given job.
+* Create job (workflow-plugin / pipeline only)
 * Build jobs with or without parameters.
 * Webhook support! Send message on build success/failure
+* Tested with freestyle and pipeline (workflow plugin) jobs.
 * Support AUTOINSTALL_DEPS thanks to the `requirements.txt` file.
 
 Have an idea ? Open an [issue](https://github.com/Djiit/err-jenkins/issues) or send me a [Pull Request](https://github.com/Djiit/err-jenkins/pulls).
