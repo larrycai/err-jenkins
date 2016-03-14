@@ -239,6 +239,7 @@ Parameter Name: {{p.name}}
 
     @staticmethod
     def format_notification(body):
+        body['fullname'] = body.get('fullname', body['name'])
         NOTIFICATION_TEMPLATE = Template("""Build #{{build.number}} \
 {{build.status}} for Job {{fullname}} ({{build.full_url}})
 {% if build.scm %}Based on {{build.scm.url}}/commit/{{build.scm.commit}} \
