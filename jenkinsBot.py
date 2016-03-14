@@ -104,7 +104,9 @@ class JenkinsBot(BotPlugin):
                      else self.bot_config.CHATROOM_PRESENCE)
 
         for room in chatrooms:
-            self.send(room, mess, message_type='groupchat')
+            self.send(self.build_identifier(room),
+                      mess,
+                      message_type='groupchat')
         return
 
     @webhook(r'/jenkins/notification')
