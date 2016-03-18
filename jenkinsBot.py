@@ -79,7 +79,7 @@ class JenkinsBot(BotPlugin):
                                 configuration.items()))
         else:
             config = CONFIG_TEMPLATE
-        super().configure(config)
+        super(JenkinsBot, self).configure(config)
         return
 
     def check_configuration(self, configuration):
