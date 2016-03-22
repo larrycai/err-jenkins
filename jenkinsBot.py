@@ -84,7 +84,7 @@ class JenkinsBot(BotPlugin):
 
     def check_configuration(self, configuration):
         for c in configuration:
-            if len(configuration[c] == 0):
+            if len(configuration[c]) == 0:
                 raise ValidationException(c)
         return
 
