@@ -3,6 +3,7 @@ from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
 
 import json
+import validators
 from itertools import chain
 
 from jinja2 import Template
@@ -79,13 +80,21 @@ class JenkinsBot(BotPlugin):
                                 configuration.items()))
         else:
             config = CONFIG_TEMPLATE
-        super().configure(config)
+        super(JenkinsBot, self).configure(config)
         return
 
     def check_configuration(self, configuration):
+        self.log.debug(configuration)
         for c in configuration:
-            if len(configuration[c]) == 0:
-                raise ValidationException(c)
+            if c == 'URL':
+                if not validators.url(configuration['URL']):
+                    raise ValidationException('JENKINS_URL is not a well formed URL')
+            elif c in ['USERNAME', 'PASSWORD', 'RECEIVE_NOTIFICATION']:
+                if len(configuration[c]) == 0 or not isinstance(configuration[c], str):
+                    raise ValidationException("{} is a required string config setting".format(c))
+            elif c in ['CHATROOMS_NOTIFICATION']:
+                if not isinstance(configuration[c], tuple):
+                    raise ValidationException("{} should be of type tuple".format(c))
         return
 
     def connect_to_jenkins(self):

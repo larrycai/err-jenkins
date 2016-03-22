@@ -21,7 +21,7 @@ Have an idea ? Open an [issue](https://github.com/Djiit/err-jenkins/issues) or s
 
 ### Requirements
 
-This plugin is tested against Python 2.7+ and 3.3+. It only depends on the `python-jenkins` package:
+This plugin is tested against Python 2.7+ and 3.3+. It only depends on the `python-jenkins` and `validators` packages:
 
 ```bash
 pip install python-jenkins
