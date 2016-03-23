@@ -2,12 +2,11 @@
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
 
-import json
 import validators
 from itertools import chain
 
 from jinja2 import Template
-from jenkins import Jenkins
+from jenkins import Jenkins, JenkinsException, LAUNCHER_JNLP
 from errbot import BotPlugin, botcmd, webhook
 from errbot.utils import ValidationException
 
@@ -64,12 +63,75 @@ JENKINS_JOB_TEMPLATE_PIPELINE = """<?xml version='1.0' encoding='UTF-8'?>
 </flow-definition>
 """
 
+JENKINS_JOB_TEMPLATE_MULTIBRANCH = """<?xml version='1.0' encoding='UTF-8'?>
+<org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject plugin="workflow-multibranch">
+  <actions/>
+  <description></description>
+  <properties>
+    <com.cloudbees.hudson.plugins.folder.properties.FolderCredentialsProvider_-FolderCredentialsProperty plugin="cloudbees-folder">
+      <domainCredentialsMap class="hudson.util.CopyOnWriteMap$Hash">
+        <entry>
+          <com.cloudbees.plugins.credentials.domains.Domain plugin="credentials">
+            <specifications/>
+          </com.cloudbees.plugins.credentials.domains.Domain>
+          <java.util.concurrent.CopyOnWriteArrayList/>
+        </entry>
+      </domainCredentialsMap>
+    </com.cloudbees.hudson.plugins.folder.properties.FolderCredentialsProvider_-FolderCredentialsProperty>
+  </properties>
+  <views>
+    <hudson.model.AllView>
+      <owner class="org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject" reference="../../.."/>
+      <name>All</name>
+      <filterExecutors>false</filterExecutors>
+      <filterQueue>false</filterQueue>
+      <properties class="hudson.model.View$PropertyList"/>
+    </hudson.model.AllView>
+  </views>
+  <viewsTabBar class="hudson.views.DefaultViewsTabBar"/>
+  <primaryView>All</primaryView>
+  <healthMetrics>
+    <com.cloudbees.hudson.plugins.folder.health.WorstChildHealthMetric plugin="cloudbees-folder"/>
+  </healthMetrics>
+  <icon class="com.cloudbees.hudson.plugins.folder.icons.StockFolderIcon" plugin="cloudbees-folder"/>
+  <orphanedItemStrategy class="com.cloudbees.hudson.plugins.folder.computed.DefaultOrphanedItemStrategy" plugin="cloudbees-folder">
+    <pruneDeadBranches>true</pruneDeadBranches>
+    <daysToKeep>0</daysToKeep>
+    <numToKeep>5</numToKeep>
+  </orphanedItemStrategy>
+  <triggers>
+    <com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger plugin="cloudbees-folder">
+      <spec>*/12 * * * *</spec>
+      <interval>300000</interval>
+    </com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger>
+  </triggers>
+  <sources class="jenkins.branch.MultiBranchProject$BranchSourceList" plugin="branch-api">
+    <data>
+      <jenkins.branch.BranchSource>
+        <source class="org.jenkinsci.plugins.github_branch_source.GitHubSCMSource" plugin="github-branch-source">
+          <repoOwner>{repo_owner}</repoOwner>
+          <repository>{repo_name}</repository>
+          <includes>*</includes>
+          <excludes></excludes>
+        </source>
+        <strategy class="jenkins.branch.DefaultBranchPropertyStrategy">
+          <properties class="empty-list"/>
+        </strategy>
+      </jenkins.branch.BranchSource>
+    </data>
+    <owner class="org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject" reference="../.."/>
+  </sources>
+  <factory class="org.jenkinsci.plugins.workflow.multibranch.WorkflowBranchProjectFactory">
+    <owner class="org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject" reference="../.."/>
+  </factory>
+</org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject>"""
+
 
 class JenkinsBot(BotPlugin):
     """Basic Err integration with Jenkins CI"""
 
     min_err_version = '1.2.1'
-    # max_err_version = '3.3.0'
+    # max_err_version = '4.0.3'
 
     def get_configuration_template(self):
         return CONFIG_TEMPLATE
@@ -113,9 +175,7 @@ class JenkinsBot(BotPlugin):
                      else self.bot_config.CHATROOM_PRESENCE)
 
         for room in chatrooms:
-            self.send(self.build_identifier(room),
-                      mess,
-                      message_type='groupchat')
+            self.send(self.build_identifier(room), mess)
         return
 
     @webhook(r'/jenkins/notification')
@@ -126,7 +186,7 @@ class JenkinsBot(BotPlugin):
 
         self.log.debug(repr(incoming_request))
         self.broadcast(self.format_notification(incoming_request))
-        return "OK"
+        return
 
     @botcmd
     def jenkins_list(self, mess, args):
@@ -189,25 +249,162 @@ class JenkinsBot(BotPlugin):
         return self.jenkins_build(mess, args)
 
     @botcmd(split_args_with=None)
-    def jenkins_create(self, mess, args):
+    def jenkins_createjob(self, mess, args):
         """Create a Jenkins Job.
-        Example: !jenkins create pipeline foo git@github.com:foo/bar.git
+        Example: !jenkins createjob pipeline foo git@github.com:foo/bar.git
         """
         if len(args) < 2:  # No Job type or name
             return 'Oops, I need a type and a name for your new job.'
 
         if args[0] not in ('pipeline', 'multibranch'):
-            return 'I\'m sorry, what type of job do you want ?'
+            return 'I\'m sorry, I can only create `pipeline` and \
+                    `multibranch` jobs.'
 
         self.connect_to_jenkins()
 
-        if args[0] == 'pipeline':
-            self.jenkins.create_job(
-                args[1],
-                JENKINS_JOB_TEMPLATE_PIPELINE.format(repository=args[2]))
-        elif args[0] == 'multibranch':
-            return
-        return
+        try:
+            if args[0] == 'pipeline':
+                self.jenkins.create_job(
+                    args[1],
+                    JENKINS_JOB_TEMPLATE_PIPELINE.format(repository=args[2]))
+
+            elif args[0] == 'multibranch':
+                repository = args[2].rsplit('/', maxsplit=2)[-2:]
+
+                self.jenkins.create_job(
+                    args[1],
+                    JENKINS_JOB_TEMPLATE_MULTIBRANCH.format(
+                        repo_owner=repository[0].split(':')[-1],
+                        repo_name=repository[1].strip('.git')))
+        except JenkinsException as e:
+            return 'Oops, {0}'.format(e)
+        return 'Your job has been created: {0}/job/{1}'.format(
+            self.config['URL'], args[1])
+
+    @botcmd(split_args_with=None)
+    def jenkins_deletejob(self, mess, args):
+        """Delete a Jenkins Job.
+        Example: !jenkins deletejob foo
+        """
+        if len(args) < 1:  # No job name
+            return 'Oops, I need the name of the job you want me to delete.'
+
+        self.connect_to_jenkins()
+
+        try:
+            self.jenkins.delete_job(args[0])
+        except JenkinsException as e:
+            return 'Oops, {0}'.format(e)
+
+        return 'Your job has been deleted.'
+
+    @botcmd(split_args_with=None)
+    def jenkins_enablejob(self, mess, args):
+        """Enable a Jenkins Job.
+        Example: !jenkins enablejob foo
+        """
+        if len(args) < 1:  # No job name
+            return 'Oops, I need the name of the job you want me to enable.'
+
+        self.connect_to_jenkins()
+
+        try:
+            self.jenkins.enable_job(args[0])
+        except JenkinsException as e:
+            return 'Oops, {0}'.format(e)
+
+        return 'Your job has been enabled.'
+
+    @botcmd(split_args_with=None)
+    def jenkins_disablejob(self, mess, args):
+        """Disable a Jenkins Job.
+        Example: !jenkins disablejob foo
+        """
+        if len(args) < 1:  # No job name
+            return 'Oops, I need the name of the job you want me to disable.'
+
+        self.connect_to_jenkins()
+
+        try:
+            self.jenkins.disable_job(args[0])
+        except JenkinsException as e:
+            return 'Oops, {0}'.format(e)
+
+        return 'Your job has been disabled.'
+
+    @botcmd(split_args_with=None)
+    def jenkins_createnode(self, mess, args):
+        """Create a Jenkins Node with a JNLP Launcher with optionnal labels.
+        Example: !jenkins createnode runner-foo-laptop # without labels
+        Example: !jenkins createnode runner-bar-laptop linux docker # with labels
+        """
+        if len(args) < 1:  # No node name
+            return 'Oops, I need a name for your new node.'
+
+        self.connect_to_jenkins()
+
+        try:
+            self.jenkins.create_node(
+                name=args[0],
+                labels=' '.join(args[2:]),
+                exclusive=True,
+                launcher=LAUNCHER_JNLP)
+        except JenkinsException as e:
+            return 'Oops, {0}'.format(e)
+
+        return 'Your node has been created: {0}/computer/{1}'.format(
+            self.config['URL'], args[0])
+
+    @botcmd(split_args_with=None)
+    def jenkins_deletenode(self, mess, args):
+        """Delete a Jenkins Node.
+        Example: !jenkins deletenode runner-foo-laptop
+        """
+        if len(args) < 1:  # No node name
+            return 'Oops, I need the name of the node you want me to delete.'
+
+        self.connect_to_jenkins()
+
+        try:
+            self.jenkins.delete_node(args[0])
+        except JenkinsException as e:
+            return 'Oops, {0}'.format(e)
+
+        return 'Your node has been deleted.'
+
+    @botcmd(split_args_with=None)
+    def jenkins_enablenode(self, mess, args):
+        """Enable a Jenkins Node.
+        Example: !jenkins enablenode runner-foo-laptop
+        """
+        if len(args) < 1:  # No node name
+            return 'Oops, I need the name of the node you want me to enable.'
+
+        self.connect_to_jenkins()
+
+        try:
+            self.jenkins.enable_node(args[0])
+        except JenkinsException as e:
+            return 'Oops, {0}'.format(e)
+
+        return 'Your node has been enabled.'
+
+    @botcmd(split_args_with=None)
+    def jenkins_disablenode(self, mess, args):
+        """Disable a Jenkins Node.
+        Example: !jenkins disablenode runner-foo-laptop
+        """
+        if len(args) < 1:  # No node name
+            return 'Oops, I need the name of the node you want me to disable.'
+
+        self.connect_to_jenkins()
+
+        try:
+            self.jenkins.disable_node(args[0])
+        except JenkinsException as e:
+            return 'Oops, {0}'.format(e)
+
+        return 'Your node has been disabled.'
 
     def search_job(self, search_term):
         self.log.debug('Querying Jenkins for job "{0}"'.format(search_term))
