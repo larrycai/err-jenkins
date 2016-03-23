@@ -22,9 +22,44 @@ class TestJenkinsBot(object):
         assert ('What Job would you like the parameters for?'
                 in testbot.pop_message())
 
-    def test_jenkins_create_no_args(self, testbot):
-        testbot.push_message('!jenkins create')
+    def test_jenkins_createjob_no_args(self, testbot):
+        testbot.push_message('!jenkins createjob')
         assert ('Oops, I need a type and a name for your new job.'
+                in testbot.pop_message())
+
+    def test_jenkins_deletejob_no_args(self, testbot):
+        testbot.push_message('!jenkins deletejob')
+        assert ('Oops, I need the name of the job you want me to delete.'
+                in testbot.pop_message())
+
+    def test_jenkins_enablejob_no_args(self, testbot):
+        testbot.push_message('!jenkins enablejob')
+        assert ('Oops, I need the name of the job you want me to enable.'
+                in testbot.pop_message())
+
+    def test_jenkins_disablejob_no_args(self, testbot):
+        testbot.push_message('!jenkins disablejob')
+        assert ('Oops, I need the name of the job you want me to disable.'
+                in testbot.pop_message())
+
+    def test_jenkins_createnode_no_args(self, testbot):
+        testbot.push_message('!jenkins createnode')
+        assert ('Oops, I need a name for your new node.'
+                in testbot.pop_message())
+
+    def test_jenkins_deletenode_no_args(self, testbot):
+        testbot.push_message('!jenkins deletenode')
+        assert ('Oops, I need the name of the node you want me to delete.'
+                in testbot.pop_message())
+
+    def test_jenkins_enablenode_no_args(self, testbot):
+        testbot.push_message('!jenkins enablenode')
+        assert ('Oops, I need the name of the node you want me to enable.'
+                in testbot.pop_message())
+
+    def test_jenkins_disablenode_no_args(self, testbot):
+        testbot.push_message('!jenkins disablenode')
+        assert ('Oops, I need the name of the node you want me to disable.'
                 in testbot.pop_message())
 
 class TestJenkinsBotStaticMethods(object):

@@ -9,9 +9,12 @@ Err-jenkins is a plugin for [Err](https://github.com/gbin/err) that allows you t
 * Support Jenkins 2.x!
 * Search / List available jobs.
 * List parameters for a given job.
-* Create job (workflow-plugin / pipeline only)
+* Create job (workflow-plugin / pipeline standard and multibranch jobs only)
+* Enable, Disabled and Delete job.
+* Create node (JNLP launcher only).
+* Enable, Disabled and Delete node.
 * Build jobs with or without parameters.
-* Webhook support! Send message on build success/failure
+* Webhook support! Receive REST calls on build success/failure
 * Tested with freestyle and pipeline (workflow plugin) jobs.
 * Support AUTOINSTALL_DEPS thanks to the `requirements.txt` file.
 
@@ -24,7 +27,7 @@ Have an idea ? Open an [issue](https://github.com/Djiit/err-jenkins/issues) or s
 This plugin is tested against Python 2.7+ and 3.3+. It only depends on the `python-jenkins` and `validators` packages:
 
 ```bash
-pip install python-jenkins
+pip install python-jenkins validators
 ```
 
 ### Installation
@@ -70,6 +73,21 @@ To be able to receive messages based on build success and/or failure :
 
 [![Build Status](jenkins_configuration.png)](#)
 
+Note : if you are using the Pipeline DSL, use this snippet instead :
+
+```groovy
+properties(properties:[[
+    $class: 'HudsonNotificationProperty',
+    endpoints: [[
+      event: 'all', // 'all', 'completed', 'finalized' or 'started'
+      format: 'JSON',
+      loglines: 0,
+      protocol: 'HTTP',
+      timeout: 30000,
+      url: 'http://errbot.example.com/jenkins/notification'
+    ]]
+  ]])
+```
 ## Credits
 
 This plugin is based on the original work by [benvd](https://github.com/benvd/err-jenkins).
