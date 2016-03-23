@@ -44,7 +44,7 @@ class TestJenkinsBot(object):
 
     def test_jenkins_createnode_no_args(self, testbot):
         testbot.push_message('!jenkins createnode')
-        assert ('Oops, I need a name for your new node.'
+        assert ('Oops, I need a name and a working dir for your new node.'
                 in testbot.pop_message())
 
     def test_jenkins_deletenode_no_args(self, testbot):

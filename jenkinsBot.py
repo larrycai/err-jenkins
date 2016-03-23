@@ -181,8 +181,7 @@ class JenkinsBot(BotPlugin):
     @webhook(r'/jenkins/notification')
     def handle_notification(self, incoming_request):
         if not self.config['RECEIVE_NOTIFICATION']:
-            return "Notification handling is disabled \
-                    (JENKINS_RECEIVE_NOTIFICATION = False)"
+            return 'Notification handling is disabled.'
 
         self.log.debug(repr(incoming_request))
         self.broadcast(self.format_notification(incoming_request))
@@ -335,17 +334,18 @@ class JenkinsBot(BotPlugin):
     @botcmd(split_args_with=None)
     def jenkins_createnode(self, mess, args):
         """Create a Jenkins Node with a JNLP Launcher with optionnal labels.
-        Example: !jenkins createnode runner-foo-laptop # without labels
-        Example: !jenkins createnode runner-bar-laptop linux docker # with labels
+        Example: !jenkins createnode runner-foo-laptop /home/foo # without labels
+        Example: !jenkins createnode runner-bar-laptop /home/bar linux docker # with labels
         """
         if len(args) < 1:  # No node name
-            return 'Oops, I need a name for your new node.'
+            return 'Oops, I need a name and a working dir for your new node.'
 
         self.connect_to_jenkins()
 
         try:
             self.jenkins.create_node(
                 name=args[0],
+                remoteFS=args[1],
                 labels=' '.join(args[2:]),
                 exclusive=True,
                 launcher=LAUNCHER_JNLP)
