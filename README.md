@@ -40,6 +40,8 @@ As admin of an err chatbot, send the following command over XMPP:
 
 ### Commands
 
+Check out the [examples](./EXAMPLES.md) !
+
 Use `!help JenkinsBot` to see the available commands and their explanation.
 
 ## Configuration
