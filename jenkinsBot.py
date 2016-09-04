@@ -147,15 +147,15 @@ class JenkinsBot(BotPlugin):
 
     def check_configuration(self, configuration):
         self.log.debug(configuration)
-        for c in configuration:
+        for c, v in configuration.items():
             if c == 'URL':
-                if not validators.url(configuration['URL']):
+                if not validators.url(v):
                     raise ValidationException('JENKINS_URL is not a well formed URL')
             elif c in ['USERNAME', 'PASSWORD', 'RECEIVE_NOTIFICATION']:
-                if len(configuration[c]) == 0 or not isinstance(configuration[c], str):
+                if len(v) == 0 or not isinstance(v, str):
                     raise ValidationException("{} is a required string config setting".format(c))
             elif c in ['CHATROOMS_NOTIFICATION']:
-                if not isinstance(configuration[c], tuple):
+                if not isinstance(v, tuple):
                     raise ValidationException("{} should be of type tuple".format(c))
         return
 
