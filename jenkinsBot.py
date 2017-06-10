@@ -6,14 +6,15 @@ import validators
 from itertools import chain
 
 from jinja2 import Template
-from jenkins import Jenkins, JenkinsException, LAUNCHER_JNLP
+from jenkins import Jenkins, JenkinsException
 from errbot import BotPlugin, botcmd, webhook
 
 try:
-    # ErrBot < 5.x
-    from errbot.utils import ValidationException
+    # ErrBot > 5.x
+    from errbot import ValidationException    
 except ImportError:
-    from errbot import ValidationException
+    from errbot.utils import ValidationException
+
 try:
     from config import JENKINS_URL, JENKINS_USERNAME, JENKINS_PASSWORD
 except ImportError:
