@@ -1,2 +1,2 @@
-python-jenkins
+python-jenkins==0.3.4
 validators
