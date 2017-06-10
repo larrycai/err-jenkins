@@ -196,7 +196,7 @@ class JenkinsBot(BotPlugin):
     def jenkins_list(self, mess, args):
         """List all jobs, optionally filter them using a search term."""
         self.connect_to_jenkins()
-        return self.format_jobs([job for job in self.jenkins.get_jobs(folder_depth=None)
+        return self.format_jobs([job for job in self.jenkins.get_jobs()
             if args.lower() in job['fullname'].lower()])
 
     @botcmd
